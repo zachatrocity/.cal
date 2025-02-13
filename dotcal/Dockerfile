@@ -1,7 +1,7 @@
-FROM golang:1.21-alpine
+FROM golang:1.24-alpine
 
-# Install git and openssh
-RUN apk add --no-cache git openssh-client
+# Install required packages
+RUN apk add --no-cache git openssh-client dcron
 
 # Set up SSH for git
 RUN mkdir -p /root/.ssh && \
@@ -26,4 +26,8 @@ RUN go build -o /usr/local/bin/dotcal ./cmd/server
 # Create directory for git repository
 RUN mkdir -p /app/repo
 
-ENTRYPOINT ["dotcal"]
+# Copy and set up entrypoint script
+COPY entrypoint.sh /usr/local/bin/
+RUN chmod +x /usr/local/bin/entrypoint.sh
+
+ENTRYPOINT ["/usr/local/bin/entrypoint.sh"]

@@ -1,0 +1,29 @@
+# Go build and test files
+*.exe
+*.test
+*.out
+*.o
+*.a
+
+# Go workspace file
+go.work
+
+# Environment variables
+.env
+
+# Data directory
+data/
+
+# IDE specific files
+.idea/
+.vscode/
+*.swp
+*.swo
+
+# OS specific files
+.DS_Store
+Thumbs.db
+
+# Binary
+backend/server
+backend/dotcal

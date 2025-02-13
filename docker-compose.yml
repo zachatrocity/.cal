@@ -1,0 +1,39 @@
+version: '3.8'
+
+services:
+  dotcal:
+    build: ./dotcal
+    environment:
+      # The GitHub repository URL where the schedule will be published (required)
+      # Format: git@github.com:username/repo.git
+      - GITHUB_REPO=${GITHUB_REPO}
+
+      # The branch to publish to (defaults to main)
+      - GITHUB_BRANCH=${GITHUB_BRANCH:-main}
+
+      # Comma-separated list of ICS feed URLs or file paths (required)
+      # Example: https://calendar.google.com/calendar/ical/example/basic.ics,/path/to/local.ics
+      - ICS_FEEDS=${ICS_FEEDS}
+
+      # Timezone for schedule display (defaults to UTC)
+      # Example: America/New_York, Europe/London
+      - TIMEZONE=${TIMEZONE:-UTC}
+
+      # How often to sync and publish updates (defaults to every 30 minutes)
+      # Uses standard cron syntax
+      - SYNC_SCHEDULE=${SYNC_SCHEDULE:-*/30 * * * *}
+
+      # Number of months to generate schedules for (defaults to 3)
+      # Includes 1 month of past schedules and X months of future schedules
+      - SCHEDULE_MONTHS=${SCHEDULE_MONTHS:-3}
+
+      # Directory inside container where git repo will be cloned
+      - REPO_DIRECTORY=/app/repo
+    volumes:
+      # Mount the git repository directory
+      - ./data/repo:/app/repo
+
+      # Mount SSH key from host (read-only)
+      # The SSH key must have write access to the GitHub repository
+      - ${SSH_KEY_FILE:-~/.ssh/id_rsa}:/root/.ssh/id_rsa:ro
+    restart: unless-stopped
