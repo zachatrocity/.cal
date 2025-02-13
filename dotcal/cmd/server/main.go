@@ -2,7 +2,6 @@ package main
 
 import (
 	"fmt"
-	"log"
 	"os"
 	"strconv"
 	"strings"
@@ -12,6 +11,7 @@ import (
 	"github.com/zach/dotcal/internal/calendar"
 	"github.com/zach/dotcal/internal/generator"
 	"github.com/zach/dotcal/internal/git"
+	"github.com/zach/dotcal/internal/logger"
 )
 
 type Config struct {
@@ -25,16 +25,23 @@ type Config struct {
 }
 
 func main() {
+	logger.Debug("Starting DotCal application")
+
 	// Load configuration
 	config, err := loadConfig()
 	if err != nil {
-		log.Fatalf("Failed to load configuration: %v", err)
+		logger.Error("Failed to load configuration: %v", err)
+		os.Exit(1)
 	}
+	logger.Debug("Configuration loaded: repo=%s, branch=%s, timezone=%s, feeds=%d",
+		config.GithubRepo, config.GithubBranch, config.TimeZone, len(config.ICSFeeds))
 
 	// Initialize components
+	logger.Debug("Initializing components")
 	tz, err := time.LoadLocation(config.TimeZone)
 	if err != nil {
-		log.Fatalf("Failed to load timezone: %v", err)
+		logger.Error("Failed to load timezone: %v", err)
+		os.Exit(1)
 	}
 
 	fetcher := calendar.NewFetcher()
@@ -47,28 +54,32 @@ func main() {
 	// Clone repository if it doesn't exist
 	if _, err := os.Stat(config.RepoDirectory); os.IsNotExist(err) {
 		if err := repo.Clone(config.GithubRepo); err != nil {
-			log.Fatalf("Failed to clone repository: %v", err)
+			logger.Error("Failed to clone repository: %v", err)
+			os.Exit(1)
 		}
 	}
 
 	// Process calendars
+	logger.Debug("Processing calendar feeds")
 	var allEvents []calendar.Event
 	for _, feedURL := range config.ICSFeeds {
+		logger.Debug("Processing feed: %s", feedURL)
 		feed := calendar.Feed{
 			Source:   feedURL,
 			IsURL:    strings.HasPrefix(feedURL, "http"),
 			TimeZone: tz,
 		}
 
+		logger.Debug("Fetching feed data")
 		data, err := fetcher.Fetch(feed)
 		if err != nil {
-			log.Printf("Failed to fetch feed %s: %v", feedURL, err)
+			logger.Error("Failed to fetch feed %s: %v", feedURL, err)
 			continue
 		}
 
 		events, err := parser.Parse(data)
 		if err != nil {
-			log.Printf("Failed to parse feed %s: %v", feedURL, err)
+			logger.Error("Failed to parse feed %s: %v", feedURL, err)
 			continue
 		}
 
@@ -76,14 +87,17 @@ func main() {
 	}
 
 	// Generate schedules for configured time range
+	logger.Debug("Generating schedules")
 	now := time.Now().In(tz)
 	startDate := now.AddDate(0, -1, 0) // Start from 1 month ago
 	endDate := now.AddDate(0, config.ScheduleMonths, 0)
+	logger.Debug("Date range: %s to %s", startDate.Format("2006-01-02"), endDate.Format("2006-01-02"))
 
 	// Track which files we write for commit message
 	var updatedFiles []string
 
 	// Generate schedules for each week in the range
+	logger.Debug("Processing weeks in range")
 	for d := startDate; d.Before(endDate); d = d.AddDate(0, 0, 7) {
 		year, week := d.ISOWeek()
 		schedule := merger.MergeEvents(allEvents, year, week)
@@ -97,7 +111,8 @@ func main() {
 		}
 
 		if err := repo.WriteFile(filePath, content); err != nil {
-			log.Fatalf("Failed to write schedule file %s: %v", filePath, err)
+			logger.Error("Failed to write schedule file %s: %v", filePath, err)
+			os.Exit(1)
 		}
 		updatedFiles = append(updatedFiles, filePath)
 
@@ -113,18 +128,21 @@ func main() {
 
 				// Move current README.md to past
 				if err := repo.WriteFile(fmt.Sprintf("past/%d-W%02d.md", year, week), content); err != nil {
-					log.Fatalf("Failed to archive current README.md: %v", err)
+					logger.Error("Failed to archive current README.md: %v", err)
+					os.Exit(1)
 				}
 
 				// Update README.md with next week
 				if err := repo.WriteFile("README.md", nextContent); err != nil {
-					log.Fatalf("Failed to update README.md: %v", err)
+					logger.Error("Failed to update README.md: %v", err)
+					os.Exit(1)
 				}
 				updatedFiles = append(updatedFiles, "README.md")
 			} else {
 				// Not Friday evening - use current week
 				if err := repo.WriteFile("README.md", content); err != nil {
-					log.Fatalf("Failed to write README.md: %v", err)
+					logger.Error("Failed to write README.md: %v", err)
+					os.Exit(1)
 				}
 				updatedFiles = append(updatedFiles, "README.md")
 			}
@@ -132,16 +150,21 @@ func main() {
 	}
 
 	// Commit and push changes
+	logger.Debug("Committing changes to repository")
 	commitMsg := fmt.Sprintf("Update schedules: %s", strings.Join(updatedFiles, ", "))
 	if err := repo.Commit(commitMsg); err != nil {
-		log.Fatalf("Failed to commit changes: %v", err)
+		logger.Error("Failed to commit changes: %v", err)
+		os.Exit(1)
 	}
 
+	logger.Debug("Pushing changes to remote")
 	if err := repo.Push(); err != nil {
-		log.Fatalf("Failed to push changes: %v", err)
+		logger.Error("Failed to push changes: %v", err)
+		os.Exit(1)
 	}
 
-	log.Printf("Successfully updated schedules: %s", strings.Join(updatedFiles, ", "))
+	logger.Info("Successfully updated schedules: %s", strings.Join(updatedFiles, ", "))
+	logger.Debug("DotCal application completed successfully")
 }
 
 func loadConfig() (*Config, error) {

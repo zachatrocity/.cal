@@ -33,7 +33,7 @@ services:
       # Mount the git repository directory
       - ./data/repo:/app/repo
 
-      # Mount SSH key from host (read-only)
-      # The SSH key must have write access to the GitHub repository
-      - ${SSH_KEY_FILE:-~/.ssh/id_rsa}:/root/.ssh/id_rsa:ro
+      # Mount SSH directory from host (read-only)
+      # SSH configuration must have access to the GitHub repository
+      - ~/.ssh:/root/.ssh:ro
     restart: unless-stopped

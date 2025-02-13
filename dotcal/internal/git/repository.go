@@ -6,6 +6,8 @@ import (
 	"os/exec"
 	"path/filepath"
 	"strings"
+
+	"github.com/zach/dotcal/internal/logger"
 )
 
 // Repository handles git operations
@@ -24,15 +26,23 @@ func NewRepository(path, branch string) *Repository {
 
 // Clone clones the repository
 func (r *Repository) Clone(url string) error {
+	logger.Debug("Attempting to clone repository from %s to %s (branch: %s)", url, r.path, r.branch)
+
 	if _, err := os.Stat(r.path); !os.IsNotExist(err) {
+		logger.Debug("Destination path already exists: %s", r.path)
 		return fmt.Errorf("destination path already exists: %s", r.path)
 	}
 
 	cmd := exec.Command("git", "clone", "--branch", r.branch, url, r.path)
-	if err := cmd.Run(); err != nil {
-		return fmt.Errorf("failed to clone repository: %w", err)
+	logger.Debug("Running command: git clone --branch %s %s %s", r.branch, url, r.path)
+
+	output, err := cmd.CombinedOutput()
+	if err != nil {
+		logger.Error("Clone failed: %v\nOutput: %s", err, string(output))
+		return fmt.Errorf("failed to clone repository: %w\nOutput: %s", err, string(output))
 	}
 
+	logger.Debug("Repository cloned successfully")
 	return nil
 }
 
@@ -66,29 +76,43 @@ func (r *Repository) WriteFile(filename string, content string) error {
 
 // Commit commits changes
 func (r *Repository) Commit(message string) error {
+	logger.Debug("Attempting to commit changes in %s", r.path)
+
 	// Add all changes
 	cmd := exec.Command("git", "-C", r.path, "add", ".")
-	if err := cmd.Run(); err != nil {
-		return fmt.Errorf("failed to stage changes: %w", err)
+	logger.Debug("Running command: git -C %s add .", r.path)
+	output, err := cmd.CombinedOutput()
+	if err != nil {
+		logger.Error("Failed to stage changes: %v\nOutput: %s", err, string(output))
+		return fmt.Errorf("failed to stage changes: %w\nOutput: %s", err, string(output))
 	}
 
 	// Check if there are changes to commit
 	cmd = exec.Command("git", "-C", r.path, "status", "--porcelain")
-	output, err := cmd.Output()
+	logger.Debug("Running command: git -C %s status --porcelain", r.path)
+	output, err = cmd.Output()
 	if err != nil {
+		logger.Error("Failed to check git status: %v", err)
 		return fmt.Errorf("failed to check git status: %w", err)
 	}
 
 	if len(strings.TrimSpace(string(output))) == 0 {
+		logger.Debug("No changes to commit")
 		return nil // No changes to commit
 	}
 
+	logger.Debug("Changes to commit:\n%s", string(output))
+
 	// Commit changes
 	cmd = exec.Command("git", "-C", r.path, "commit", "-m", message)
-	if err := cmd.Run(); err != nil {
-		return fmt.Errorf("failed to commit changes: %w", err)
+	logger.Debug("Running command: git -C %s commit -m \"%s\"", r.path, message)
+	output, err = cmd.CombinedOutput()
+	if err != nil {
+		logger.Error("Failed to commit changes: %v\nOutput: %s", err, string(output))
+		return fmt.Errorf("failed to commit changes: %w\nOutput: %s", err, string(output))
 	}
 
+	logger.Debug("Changes committed successfully")
 	return nil
 }
 
