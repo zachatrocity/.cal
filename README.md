@@ -1,6 +1,6 @@
 # .cal - Self Hosted Scheduler
 
-This 
+This is in progress, I'll publish to a docker image when alpha is ready 
 
 ## Goals
 
