@@ -1,6 +1,18 @@
 # .cal - Self Hosted Scheduler
 
-This is in progress, I'll publish to a docker image when alpha is ready 
+This is in progress, I'll publish to a docker image when alpha is ready, you can see example output here:
+
+https://github.com/zachatrocity/cal/
+
+
+## TODO
+
+- [ ] Create tests and coverage 
+- [ ] Create month overview template
+- [ ] Publish anon .ics
+- [ ] Add booking guidlines
+- [ ] Convert markdown.go to use a templating engine
+- [ ] Publish docker image
 
 ## Goals
 
@@ -43,4 +55,3 @@ go build ./cmd/server
 ```
 
 ## License
-
