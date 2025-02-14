@@ -41,15 +41,35 @@ func (g *Generator) GenerateWeekSchedule(schedule *calendar.WeekSchedule) string
 	// Navigation
 	prevWeek := firstDay.AddDate(0, 0, -7)
 	nextWeek := firstDay.AddDate(0, 0, 7)
-	sb.WriteString(fmt.Sprintf("[← Previous Week](./%d-W%02d.md) | ", prevWeek.Year(), g.getISOWeek(prevWeek)))
+	now := time.Now()
+
+	// Determine directory for previous week
+	prevYear, prevWeekNum := prevWeek.ISOWeek()
+	var prevPath string
+	if prevWeek.Before(now) {
+		prevPath = fmt.Sprintf("/past/%d-W%02d.md", prevYear, prevWeekNum)
+	} else {
+		prevPath = fmt.Sprintf("/future/%d-W%02d.md", prevYear, prevWeekNum)
+	}
+
+	// Determine directory for next week
+	nextYear, nextWeekNum := nextWeek.ISOWeek()
+	var nextPath string
+	if nextWeek.Before(now) {
+		nextPath = fmt.Sprintf("/past/%d-W%02d.md", nextYear, nextWeekNum)
+	} else {
+		nextPath = fmt.Sprintf("/future/%d-W%02d.md", nextYear, nextWeekNum)
+	}
+
+	sb.WriteString(fmt.Sprintf("[← Previous Week](%s) | ", prevPath))
 	sb.WriteString(fmt.Sprintf("Week of %s - %s, %d (Week %d)",
 		firstDay.Format("January 2"),
 		lastDay.Format("January 2"),
 		firstDay.Year(),
 		schedule.Week))
-	sb.WriteString(fmt.Sprintf(" | [Next Week →](./%d-W%02d.md)\n\n", nextWeek.Year(), g.getISOWeek(nextWeek)))
+	sb.WriteString(fmt.Sprintf(" | [Next Week →](%s)\n\n", nextPath))
 
-	sb.WriteString("[Jump to Current Week](/README.md) | [View All Weeks](./calendar-index.md)\n")
+	sb.WriteString("[Jump to Current Week](/README.md) | [View All Weeks](/calendar-index.md)\n")
 	sb.WriteString("</div>\n\n")
 
 	// Legend
@@ -90,9 +110,9 @@ func (g *Generator) GenerateWeekSchedule(schedule *calendar.WeekSchedule) string
 	sb.WriteString("- 🟡 Tentative: Possibly available\n\n")
 
 	sb.WriteString("### 🗓️ Quick Links\n")
-	sb.WriteString("- [Add to Calendar](./calendar.ics)\n")
-	sb.WriteString(fmt.Sprintf("- [View Month Overview](./%s.md)\n", firstDay.Format("2006-01")))
-	sb.WriteString("- [Booking Guidelines](./booking-guidelines.md)\n\n")
+	sb.WriteString("- [Add to Calendar](/calendar.ics)\n")
+	sb.WriteString(fmt.Sprintf("- [View Month Overview](/%s.md)\n", firstDay.Format("2006-01")))
+	sb.WriteString("- [Booking Guidelines](/booking-guidelines.md)\n\n")
 
 	// Last updated
 	sb.WriteString(fmt.Sprintf("### 🔄 Last Updated: %s\n",
