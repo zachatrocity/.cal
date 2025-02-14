@@ -24,25 +24,88 @@ func NewRepository(path, branch string) *Repository {
 	}
 }
 
-// Clone clones the repository
+// IsValidRepo checks if the path is a valid git repository
+func (r *Repository) IsValidRepo() bool {
+	cmd := exec.Command("git", "-C", r.path, "rev-parse", "--git-dir")
+	if err := cmd.Run(); err != nil {
+		return false
+	}
+	return true
+}
+
+// Clone clones the repository and ensures the target branch exists
 func (r *Repository) Clone(url string) error {
-	logger.Debug("Attempting to clone repository from %s to %s (branch: %s)", url, r.path, r.branch)
+	logger.Debug("Attempting to clone repository from %s to %s", url, r.path)
 
 	if _, err := os.Stat(r.path); !os.IsNotExist(err) {
 		logger.Debug("Destination path already exists: %s", r.path)
 		return fmt.Errorf("destination path already exists: %s", r.path)
 	}
 
-	cmd := exec.Command("git", "clone", "--branch", r.branch, url, r.path)
-	logger.Debug("Running command: git clone --branch %s %s %s", r.branch, url, r.path)
+	// First clone without specifying branch
+	cmd := exec.Command("git", "clone", url, r.path)
+	logger.Debug("Running command: git clone %s %s", url, r.path)
 
 	output, err := cmd.CombinedOutput()
 	if err != nil {
 		logger.Error("Clone failed: %v\nOutput: %s", err, string(output))
-		return fmt.Errorf("failed to clone repository: %w\nOutput: %s", err, string(output))
+		return fmt.Errorf("failed to clone repository: %w", err)
 	}
 
-	logger.Debug("Repository cloned successfully")
+	// Check if branch exists
+	cmd = exec.Command("git", "-C", r.path, "rev-parse", "--verify", r.branch)
+	if err := cmd.Run(); err != nil {
+		logger.Debug("Branch %s does not exist, creating it", r.branch)
+
+		// Create and checkout new branch
+		cmd = exec.Command("git", "-C", r.path, "checkout", "-b", r.branch)
+		output, err = cmd.CombinedOutput()
+		if err != nil {
+			logger.Error("Failed to create branch: %v\nOutput: %s", err, string(output))
+			return fmt.Errorf("failed to create branch: %w", err)
+		}
+
+		// Initialize repository structure
+		if err := r.initializeRepoStructure(); err != nil {
+			return fmt.Errorf("failed to initialize repository structure: %w", err)
+		}
+
+		// Commit and push initial structure
+		if err := r.Commit("Initialize repository structure"); err != nil {
+			return fmt.Errorf("failed to commit initial structure: %w", err)
+		}
+
+		if err := r.Push(); err != nil {
+			return fmt.Errorf("failed to push initial structure: %w", err)
+		}
+	} else {
+		// Branch exists, checkout
+		cmd = exec.Command("git", "-C", r.path, "checkout", r.branch)
+		if err := cmd.Run(); err != nil {
+			return fmt.Errorf("failed to checkout branch: %w", err)
+		}
+	}
+
+	logger.Debug("Repository cloned and branch setup completed successfully")
+	return nil
+}
+
+// initializeRepoStructure creates the initial repository structure
+func (r *Repository) initializeRepoStructure() error {
+	// Create directories
+	dirs := []string{"past", "future"}
+	for _, dir := range dirs {
+		if err := os.MkdirAll(filepath.Join(r.path, dir), 0755); err != nil {
+			return fmt.Errorf("failed to create directory %s: %w", dir, err)
+		}
+	}
+
+	// Create initial README.md
+	content := "# DotCal Schedule\n\nThis repository contains calendar schedules managed by DotCal."
+	if err := r.WriteFile("README.md", content); err != nil {
+		return fmt.Errorf("failed to create README.md: %w", err)
+	}
+
 	return nil
 }
 

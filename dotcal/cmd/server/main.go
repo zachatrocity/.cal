@@ -3,6 +3,7 @@ package main
 import (
 	"fmt"
 	"os"
+	"path/filepath"
 	"strconv"
 	"strings"
 	"time"
@@ -58,6 +59,13 @@ func main() {
 			os.Exit(1)
 		}
 	}
+
+	// Verify we have a valid git repository
+	if !repo.IsValidRepo() {
+		logger.Error("Not a valid git repository: %s", config.RepoDirectory)
+		os.Exit(1)
+	}
+	logger.Debug("Confirmed valid git repository at %s", config.RepoDirectory)
 
 	// Process calendars
 	logger.Debug("Processing calendar feeds")
@@ -115,39 +123,36 @@ func main() {
 			os.Exit(1)
 		}
 		updatedFiles = append(updatedFiles, filePath)
+	}
 
-		// Handle README.md update
-		if d.Equal(now.Truncate(24 * time.Hour)) {
-			// It's the current week
-			if now.Weekday() == time.Friday && now.Hour() >= 18 {
-				// Friday evening - use next week's schedule
-				nextWeek := d.AddDate(0, 0, 7)
-				nextYear, nextWeekNum := nextWeek.ISOWeek()
-				nextSchedule := merger.MergeEvents(allEvents, nextYear, nextWeekNum)
-				nextContent := gen.GenerateWeekSchedule(nextSchedule)
-
-				// Move current README.md to past
-				if err := repo.WriteFile(fmt.Sprintf("past/%d-W%02d.md", year, week), content); err != nil {
-					logger.Error("Failed to archive current README.md: %v", err)
-					os.Exit(1)
-				}
-
-				// Update README.md with next week
-				if err := repo.WriteFile("README.md", nextContent); err != nil {
-					logger.Error("Failed to update README.md: %v", err)
-					os.Exit(1)
-				}
-				updatedFiles = append(updatedFiles, "README.md")
-			} else {
-				// Not Friday evening - use current week
-				if err := repo.WriteFile("README.md", content); err != nil {
-					logger.Error("Failed to write README.md: %v", err)
-					os.Exit(1)
-				}
-				updatedFiles = append(updatedFiles, "README.md")
-			}
+	// Update README.md with current week's schedule
+	currentYear, currentWeek := now.ISOWeek()
+	var currentWeekPath string
+	if now.Weekday() == time.Friday && now.Hour() >= 18 {
+		// On Friday evening, use next week's schedule
+		nextWeek := now.AddDate(0, 0, 7)
+		nextYear, nextWeekNum := nextWeek.ISOWeek()
+		currentWeekPath = fmt.Sprintf("future/%d-W%02d.md", nextYear, nextWeekNum)
+	} else {
+		// Use current week's schedule
+		currentWeekPath = fmt.Sprintf("future/%d-W%02d.md", currentYear, currentWeek)
+		if now.Before(endDate) && now.After(startDate) {
+			currentWeekPath = fmt.Sprintf("past/%d-W%02d.md", currentYear, currentWeek)
 		}
 	}
+
+	// Read and copy the current week's content to README.md
+	currentWeekContent, err := os.ReadFile(filepath.Join(config.RepoDirectory, currentWeekPath))
+	if err != nil {
+		logger.Error("Failed to read current week file: %v", err)
+		os.Exit(1)
+	}
+
+	if err := repo.WriteFile("README.md", string(currentWeekContent)); err != nil {
+		logger.Error("Failed to write README.md: %v", err)
+		os.Exit(1)
+	}
+	updatedFiles = append(updatedFiles, "README.md")
 
 	// Commit and push changes
 	logger.Debug("Committing changes to repository")

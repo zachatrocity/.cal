@@ -49,7 +49,7 @@ func (g *Generator) GenerateWeekSchedule(schedule *calendar.WeekSchedule) string
 		schedule.Week))
 	sb.WriteString(fmt.Sprintf(" | [Next Week →](./%d-W%02d.md)\n\n", nextWeek.Year(), g.getISOWeek(nextWeek)))
 
-	sb.WriteString("[Jump to Current Week](./current-week.md) | [View All Weeks](./calendar-index.md)\n")
+	sb.WriteString("[Jump to Current Week](/README.md) | [View All Weeks](./calendar-index.md)\n")
 	sb.WriteString("</div>\n\n")
 
 	// Legend
