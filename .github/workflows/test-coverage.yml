@@ -21,10 +21,15 @@ jobs:
       with:
         go-version: '1.21'
 
+    - name: Configure Git
+      run: |
+        git config --global user.name "GitHub Actions"
+        git config --global user.email "actions@github.com"
+
     - name: Run tests with coverage
       run: |
         cd dotcal
-        go test ./... -coverprofile=coverage.out
+        go test ./... -coverprofile=coverage.out -v
 
     - name: Upload coverage to Codecov
       uses: codecov/codecov-action@v3
