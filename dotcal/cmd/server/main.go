@@ -6,6 +6,7 @@ import (
 	"path/filepath"
 	"strconv"
 	"strings"
+	"testing"
 	"time"
 
 	"github.com/zach/dotcal/internal/calendar"
@@ -160,10 +161,15 @@ func main() {
 		os.Exit(1)
 	}
 
-	logger.Debug("Pushing changes to remote")
-	if err := repo.Push(); err != nil {
-		logger.Error("Failed to push changes: %v", err)
-		os.Exit(1)
+	// Skip push when running under test
+	if !testing.Testing() {
+		logger.Debug("Pushing changes to remote")
+		if err := repo.Push(); err != nil {
+			logger.Error("Failed to push changes: %v", err)
+			os.Exit(1)
+		}
+	} else {
+		logger.Debug("Skipping push in test mode")
 	}
 
 	logger.Info("Successfully updated schedules: %s", strings.Join(updatedFiles, ", "))
