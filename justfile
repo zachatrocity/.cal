@@ -41,3 +41,8 @@ rebuild: stop build start
 coverage:
     cd dotcal && go test ./... -coverprofile=coverage.out
     cd dotcal && go tool cover -html=coverage.out
+
+# Create and push a new release tag (usage: just release 0.0.2)
+release version:
+    git tag v{{version}}
+    git push origin v{{version}}
