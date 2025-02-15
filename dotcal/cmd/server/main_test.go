@@ -26,6 +26,22 @@ func setupTestEnv(t *testing.T) (string, func()) {
 	tmpDir := t.TempDir()
 	repoDir := filepath.Join(tmpDir, "repo")
 
+	// Create templates directory structure in the working directory
+	templatesDir := filepath.Join("internal", "templates", "default")
+	if err := os.MkdirAll(templatesDir, 0755); err != nil {
+		t.Fatal(err)
+	}
+
+	// Copy weekly template from source
+	templateContent, err := os.ReadFile(filepath.Join("..", "..", "internal", "templates", "default", "weekly.md.tmpl"))
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	if err := os.WriteFile(filepath.Join(templatesDir, "weekly.md.tmpl"), templateContent, 0644); err != nil {
+		t.Fatal(err)
+	}
+
 	// Set up required environment variables
 	env := map[string]string{
 		"GITHUB_REPO":     "git@github.com:test/repo.git",

@@ -1,0 +1,29 @@
+# 📅 Weekly Availability Calendar
+
+<div align="center">
+
+[← Previous Week]({{.Navigation.PrevLink}}) | Week of {{.StartDate | formatDate}} - {{.EndDate | formatDate}}, {{.Schedule.Year}} (Week {{.Schedule.Week}}) | [Next Week →]({{.Navigation.NextLink}})
+
+[Jump to Current Week]({{.Navigation.CurrentLink}}) | [View All Weeks]({{.Navigation.IndexLink}})
+</div>
+
+> 🟢 Available | 🟡 Tentative | 🔴 Busy 
+
+| Time | Monday | Tuesday | Wednesday | Thursday | Friday |
+|:----:|:------:|:--------:|:---------:|:--------:|:------:|
+{{- range .TimeSlots}}
+| {{.Time}} |{{range .DaySlots}} {{formatStatus .}} |{{end}}
+{{- end}}
+
+---
+### 📝 Legend
+- All times are in {{.TimeZone}} ({{timezoneOffset .TimeZone}})
+- 🟢 Available: Click to schedule a meeting
+- 🔴 Busy: Scheduled meeting or event
+- 🟡 Tentative: Possibly available
+
+### 🗓️ Quick Links
+- [Add to Calendar](/calendar.ics)
+- [Booking Guidelines](/booking-guidelines.md)
+
+### 🔄 Last Updated: {{.LastUpdated}}

@@ -2,124 +2,160 @@ package generator
 
 import (
 	"fmt"
+	"os"
+	"path/filepath"
 	"strings"
+	"text/template"
 	"time"
 
 	"github.com/zach/dotcal/internal/calendar"
 )
 
 // Generator handles markdown schedule generation
-type Generator struct{}
+type Generator struct {
+	templateDir string
+	templates   map[string]*template.Template
+}
+
+// TemplateData holds common template data
+type TemplateData struct {
+	Navigation  NavigationData
+	TimeZone    *time.Location
+	LastUpdated string
+}
+
+// NavigationData holds navigation links
+type NavigationData struct {
+	PrevLink    string
+	NextLink    string
+	CurrentLink string
+	IndexLink   string
+}
+
+// WeekTemplateData holds data for weekly view
+type WeekTemplateData struct {
+	TemplateData
+	Schedule  *calendar.WeekSchedule
+	TimeSlots []TimeSlotData
+	StartDate time.Time
+	EndDate   time.Time
+}
+
+// TimeSlotData represents a single time slot
+type TimeSlotData struct {
+	Time     string
+	DaySlots []DaySlotData
+}
+
+// DaySlotData represents a slot for a specific day
+type DaySlotData struct {
+	Status string
+	Title  string
+	Link   string
+}
 
 // NewGenerator creates a new markdown generator
-func NewGenerator() *Generator {
-	return &Generator{}
+func NewGenerator(templateDir string) (*Generator, error) {
+	g := &Generator{
+		templateDir: templateDir,
+		templates:   make(map[string]*template.Template),
+	}
+
+	if err := g.loadTemplates(); err != nil {
+		return nil, fmt.Errorf("loading templates: %w", err)
+	}
+
+	return g, nil
+}
+
+// loadTemplates loads all template files
+func (g *Generator) loadTemplates() error {
+	// Only load weekly template for now
+	name := "weekly"
+	defaultPath := filepath.Join(g.templateDir, "default", name+".md.tmpl")
+	customPath := filepath.Join(g.templateDir, "custom", name+".md.tmpl")
+
+	var templatePath string
+	if _, err := os.Stat(customPath); err == nil {
+		templatePath = customPath
+	} else {
+		templatePath = defaultPath
+	}
+
+	content, err := os.ReadFile(templatePath)
+	if err != nil {
+		return fmt.Errorf("reading template %s: %w", name, err)
+	}
+
+	tmpl, err := template.New(name).Funcs(g.templateFuncs()).Parse(string(content))
+	if err != nil {
+		return fmt.Errorf("parsing template %s: %w", name, err)
+	}
+
+	g.templates[name] = tmpl
+
+	return nil
 }
 
 // GenerateWeekSchedule creates a markdown schedule for a week
-func (g *Generator) GenerateWeekSchedule(schedule *calendar.WeekSchedule) string {
-	var sb strings.Builder
+func (g *Generator) GenerateWeekSchedule(schedule *calendar.WeekSchedule) (string, error) {
+	startDate := g.getFirstDayOfWeek(schedule.Year, schedule.Week)
+	endDate := startDate.AddDate(0, 0, 4) // Friday
 
-	// Get the dates for the week
-	firstDay := g.getFirstDayOfWeek(schedule.Year, schedule.Week)
-	lastDay := firstDay.AddDate(0, 0, 4) // Friday
-
-	// Header
-	sb.WriteString("# 📅 Weekly Availability Calendar\n\n")
-	sb.WriteString("<div align=\"center\">\n\n")
-
-	// Navigation
-	prevWeek := firstDay.AddDate(0, 0, -7)
-	nextWeek := firstDay.AddDate(0, 0, 7)
-	now := time.Now()
-
-	// Determine directory for previous week
-	prevYear, prevWeekNum := prevWeek.ISOWeek()
-	var prevPath string
-	if prevWeek.Before(now) {
-		prevPath = fmt.Sprintf("/past/%d-W%02d.md", prevYear, prevWeekNum)
-	} else {
-		prevPath = fmt.Sprintf("/future/%d-W%02d.md", prevYear, prevWeekNum)
+	data := WeekTemplateData{
+		StartDate: startDate,
+		EndDate:   endDate,
+		TemplateData: TemplateData{
+			Navigation:  g.buildNavigation(schedule.Year, schedule.Week),
+			TimeZone:    schedule.TimeZone,
+			LastUpdated: time.Now().In(schedule.TimeZone).Format("2006-01-02 15:04 MST"),
+		},
+		Schedule:  schedule,
+		TimeSlots: g.buildTimeSlots(schedule),
 	}
 
-	// Determine directory for next week
-	nextYear, nextWeekNum := nextWeek.ISOWeek()
-	var nextPath string
-	if nextWeek.Before(now) {
-		nextPath = fmt.Sprintf("/past/%d-W%02d.md", nextYear, nextWeekNum)
-	} else {
-		nextPath = fmt.Sprintf("/future/%d-W%02d.md", nextYear, nextWeekNum)
+	var output strings.Builder
+	if err := g.templates["weekly"].Execute(&output, data); err != nil {
+		return "", fmt.Errorf("executing weekly template: %w", err)
 	}
 
-	sb.WriteString(fmt.Sprintf("[← Previous Week](%s) | ", prevPath))
-	sb.WriteString(fmt.Sprintf("Week of %s - %s, %d (Week %d)",
-		firstDay.Format("January 2"),
-		lastDay.Format("January 2"),
-		firstDay.Year(),
-		schedule.Week))
-	sb.WriteString(fmt.Sprintf(" | [Next Week →](%s)\n\n", nextPath))
+	return output.String(), nil
+}
 
-	sb.WriteString("[Jump to Current Week](/README.md) | [View All Weeks](/calendar-index.md)\n")
-	sb.WriteString("</div>\n\n")
-
-	// Legend
-	sb.WriteString("> 🟢 Available | 🟡 Tentative | 🔴 Busy \n\n")
-
-	// Table header
-	sb.WriteString("| Time | Monday | Tuesday | Wednesday | Thursday | Friday |\n")
-	sb.WriteString("|:----:|:------:|:--------:|:---------:|:--------:|:------:|\n")
-
-	// Time slots
+// buildTimeSlots converts schedule slots into template data
+func (g *Generator) buildTimeSlots(schedule *calendar.WeekSchedule) []TimeSlotData {
+	var slots []TimeSlotData
 	daySlots := schedule.Days[time.Monday] // Use Monday's slots as reference
+
 	for i := range daySlots {
 		slot := daySlots[i]
 		timeStr := fmt.Sprintf("%s - %s",
 			slot.Start.Format("3:04 PM"),
 			slot.End.Format("3:04 PM"))
 
-		sb.WriteString(fmt.Sprintf("| %s |", timeStr))
-
-		// Add slots for each day
+		var daySlots []DaySlotData
 		for day := time.Monday; day <= time.Friday; day++ {
 			daySlot := schedule.Days[day][i]
-			// logger.Debug("day:", daySlot)
-			sb.WriteString(" ")
-			sb.WriteString(g.formatSlot(daySlot))
-			sb.WriteString(" |")
+			daySlots = append(daySlots, g.buildDaySlot(daySlot))
 		}
-		sb.WriteString("\n")
+
+		slots = append(slots, TimeSlotData{
+			Time:     timeStr,
+			DaySlots: daySlots,
+		})
 	}
 
-	// Footer
-	sb.WriteString("\n---\n")
-	sb.WriteString("### 📝 Legend\n")
-	sb.WriteString(fmt.Sprintf("- All times are in %s (%s)\n",
-		schedule.TimeZone.String(),
-		g.formatTimezoneOffset(schedule.TimeZone)))
-	sb.WriteString("- 🟢 Available: Click to schedule a meeting\n")
-	sb.WriteString("- 🔴 Busy: Scheduled meeting or event\n")
-	sb.WriteString("- 🟡 Tentative: Possibly available\n\n")
-
-	sb.WriteString("### 🗓️ Quick Links\n")
-	sb.WriteString("- [Add to Calendar](/calendar.ics)\n")
-	sb.WriteString(fmt.Sprintf("- [View Month Overview](/%s.md)\n", firstDay.Format("2006-01")))
-	sb.WriteString("- [Booking Guidelines](/booking-guidelines.md)\n\n")
-
-	// Last updated
-	sb.WriteString(fmt.Sprintf("### 🔄 Last Updated: %s\n",
-		time.Now().In(schedule.TimeZone).Format("2006-01-02 15:04 MST")))
-
-	return sb.String()
+	return slots
 }
 
-func (g *Generator) formatSlot(slot calendar.TimeSlot) string {
-	var status, link string
-	title := "Available"
-	// logger.Debug("og: ", slot)
+// buildDaySlot converts a calendar time slot into template data
+func (g *Generator) buildDaySlot(slot calendar.TimeSlot) DaySlotData {
+	var status, title, link string
 
 	switch slot.Status {
 	case calendar.StatusAvailable:
 		status = "🟢"
+		title = "Available"
 		link = "https://cal.com"
 	case calendar.StatusBusy:
 		status = "🔴"
@@ -129,35 +165,83 @@ func (g *Generator) formatSlot(slot calendar.TimeSlot) string {
 		title = "Tentative"
 	}
 
-	if link != "" {
-		return fmt.Sprintf("%s [%s](%s)", status, title, link)
+	return DaySlotData{
+		Status: status,
+		Title:  title,
+		Link:   link,
 	}
-	return fmt.Sprintf("%s %s", status, title)
 }
 
+// buildNavigation creates navigation links for templates
+func (g *Generator) buildNavigation(year, week int) NavigationData {
+	prevWeek := g.getFirstDayOfWeek(year, week).AddDate(0, 0, -7)
+	nextWeek := g.getFirstDayOfWeek(year, week).AddDate(0, 0, 7)
+	now := time.Now()
+
+	prevYear, prevWeekNum := prevWeek.ISOWeek()
+	nextYear, nextWeekNum := nextWeek.ISOWeek()
+
+	var prevPath, nextPath string
+	if prevWeek.Before(now) {
+		prevPath = fmt.Sprintf("/past/%d-W%02d.md", prevYear, prevWeekNum)
+	} else {
+		prevPath = fmt.Sprintf("/future/%d-W%02d.md", prevYear, prevWeekNum)
+	}
+
+	if nextWeek.Before(now) {
+		nextPath = fmt.Sprintf("/past/%d-W%02d.md", nextYear, nextWeekNum)
+	} else {
+		nextPath = fmt.Sprintf("/future/%d-W%02d.md", nextYear, nextWeekNum)
+	}
+
+	return NavigationData{
+		PrevLink:    prevPath,
+		NextLink:    nextPath,
+		CurrentLink: "/README.md",
+		IndexLink:   "/calendar-index.md",
+	}
+}
+
+// templateFuncs returns template helper functions
+func (g *Generator) templateFuncs() template.FuncMap {
+	return template.FuncMap{
+		"formatTime": func(t time.Time) string {
+			return t.Format("3:04 PM")
+		},
+		"formatDate": func(t time.Time) string {
+			return t.Format("January 2")
+		},
+		"formatStatus": func(slot DaySlotData) string {
+			if slot.Link != "" {
+				return fmt.Sprintf("%s [%s](%s)", slot.Status, slot.Title, slot.Link)
+			}
+			return fmt.Sprintf("%s %s", slot.Status, slot.Title)
+		},
+		"timezoneOffset": g.formatTimezoneOffset,
+	}
+}
+
+// Helper methods from original implementation
 func (g *Generator) getFirstDayOfWeek(year, week int) time.Time {
 	// Find the first day of the year
 	jan1 := time.Date(year, time.January, 1, 0, 0, 0, 0, time.UTC)
 
-	// Find the first Monday of the year
-	firstMonday := jan1
-	for firstMonday.Weekday() != time.Monday {
-		firstMonday = firstMonday.AddDate(0, 0, 1)
+	// Get the offset to the first Monday of the year
+	offset := int(time.Monday - jan1.Weekday())
+	if offset > 0 {
+		offset -= 7
 	}
 
-	// Add weeks to get to the desired week
-	return firstMonday.AddDate(0, 0, (week-1)*7)
-}
+	// Get the first Monday of the year
+	firstMonday := jan1.AddDate(0, 0, offset)
 
-func (g *Generator) getISOWeek(t time.Time) int {
-	_, week := t.ISOWeek()
-	return week
+	// Add weeks to get to the target week
+	return firstMonday.AddDate(0, 0, (week-1)*7)
 }
 
 func (g *Generator) formatTimezoneOffset(tz *time.Location) string {
 	now := time.Now().In(tz)
 	_, offset := now.Zone()
-
 	hours := offset / 3600
 	return fmt.Sprintf("UTC%+d", hours)
 }
