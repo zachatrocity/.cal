@@ -31,6 +31,7 @@ jobs:
       run: |
         cd dotcal
         go test ./... -coverprofile=coverage.out -v
+        go tool cover -func=coverage.out -o=coverage.out
 
     - name: Generate coverage badge
       uses: tj-actions/coverage-badge-go@v2
