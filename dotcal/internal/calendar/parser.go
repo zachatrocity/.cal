@@ -29,7 +29,7 @@ func (p *Parser) Parse(data []byte) ([]Event, error) {
 
 		// Handle line continuations
 		for i+1 < len(lines) && strings.HasPrefix(lines[i+1], " ") {
-			line += strings.TrimSpace(lines[i+1])
+			line += " " + strings.TrimSpace(lines[i+1])
 			i++
 		}
 

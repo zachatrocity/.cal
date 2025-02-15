@@ -1,5 +1,6 @@
 # .cal - Self Hosted Scheduler
 [![License: GPL v3](https://img.shields.io/badge/License-GPLv3-blue.svg)](https://www.gnu.org/licenses/gpl-3.0)
+[![codecov](https://codecov.io/gh/zachatrocity/dotcal/branch/main/graph/badge.svg)](https://codecov.io/gh/zachatrocity/dotcal)
 
 This is in progress, I'll publish to a docker image when alpha is ready, you can see example output here:
 
@@ -8,7 +9,7 @@ https://github.com/zachatrocity/cal/
 
 ## TODO
 
-- [ ] Create tests and coverage 
+- [x] Create tests and coverage 
 - [ ] Create month overview template
 - [ ] Publish anon .ics
 - [ ] Add booking guidlines
