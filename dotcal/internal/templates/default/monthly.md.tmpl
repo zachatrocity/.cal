@@ -1,0 +1,44 @@
+# 📅 Monthly Availability Overview
+
+<div align="center">
+
+[← Previous Month]({{.Navigation.PrevLink}}) | {{.Schedule.Month}} {{.Schedule.Year}} | [Next Month →]({{.Navigation.NextLink}})
+
+[Jump to Current Week]({{.Navigation.CurrentLink}}) | [View All Months]({{.Navigation.IndexLink}})
+</div>
+
+> 🟢 Available | 🟡 Tentative | 🔴 Busy 
+
+## Month at a Glance
+
+| Week | Mon | Tue | Wed | Thu | Fri |
+|:----:|:---:|:---:|:---:|:---:|:---:|
+{{range .Weeks}}
+| {{.DateRange}} | {{range .Days}}{{if .IsHoliday}}*Holiday*{{else}}{{.Status}} {{.AvailablePercent}}%<br>{{.AvailableHours}}hrs{{end}} | {{end}}
+{{end}}
+
+## Monthly Statistics
+- Total Available Hours: {{.Statistics.TotalAvailableHours}} hours
+- Average Daily Availability: {{.Statistics.AverageDailyAvailability}}%
+- Most Available Day: {{.Statistics.MostAvailableDay}} ({{.Statistics.MostAvailableDayPercent}}% average)
+- Least Available Day: {{.Statistics.LeastAvailableDay}} ({{.Statistics.LeastAvailableDayPercent}}% average)
+{{if .Statistics.Holidays}}- Holidays: {{range .Statistics.Holidays}}{{.Date}} ({{.Name}}){{end}}{{end}}
+
+## Recurring Events
+{{range .Schedule.RecurringEvents}}
+- {{.Time}}: {{.Name}}
+{{end}}
+
+---
+### 📝 Legend
+- All times are in {{.TimeZone}} ({{timezoneOffset .TimeZone}})
+- Percentages indicate available time during business hours (9 AM - 5 PM)
+- Hours shown are total available hours for booking
+- Holidays and non-business days are noted with *italics*
+
+### 🗓️ Quick Links
+- [Weekly Calendar View]({{.Navigation.CurrentLink}})
+- [Booking Guidelines](/booking-guidelines.md)
+- [Add to Calendar](/calendar.ics)
+
+### 🔄 Last Updated: {{.LastUpdated}}

@@ -6,7 +6,6 @@ import (
 	"path/filepath"
 	"strconv"
 	"strings"
-	"testing"
 	"time"
 
 	"github.com/zach/dotcal/internal/calendar"
@@ -48,7 +47,12 @@ func main() {
 	fetcher := calendar.NewFetcher()
 	parser := calendar.NewParser(tz)
 	merger := calendar.NewMerger(tz)
-	gen := generator.NewGenerator()
+	templateDir := filepath.Join("internal", "templates")
+	gen, err := generator.NewGenerator(templateDir)
+	if err != nil {
+		logger.Error("Failed to initialize generator: %v", err)
+		os.Exit(1)
+	}
 	repo := git.NewRepository(config.RepoDirectory, config.GithubBranch)
 
 	// Clone repository if it doesn't exist
@@ -108,7 +112,11 @@ func main() {
 	for d := startDate; d.Before(endDate); d = d.AddDate(0, 0, 7) {
 		year, week := d.ISOWeek()
 		schedule := merger.MergeEvents(allEvents, year, week)
-		content := gen.GenerateWeekSchedule(schedule)
+		content, err := gen.GenerateWeekSchedule(schedule)
+		if err != nil {
+			logger.Error("Failed to generate schedule for week %d-%d: %v", year, week, err)
+			os.Exit(1)
+		}
 
 		var filePath string
 		if d.Before(now) {
@@ -162,15 +170,15 @@ func main() {
 	}
 
 	// Skip push when running under test
-	if !testing.Testing() {
-		logger.Debug("Pushing changes to remote")
-		if err := repo.Push(); err != nil {
-			logger.Error("Failed to push changes: %v", err)
-			os.Exit(1)
-		}
-	} else {
-		logger.Debug("Skipping push in test mode")
-	}
+	// if !testing.Testing() && {
+	// 	logger.Debug("Pushing changes to remote")
+	// 	if err := repo.Push(); err != nil {
+	// 		logger.Error("Failed to push changes: %v", err)
+	// 		os.Exit(1)
+	// 	}
+	// } else {
+	// 	logger.Debug("Skipping push in test mode")
+	// }
 
 	logger.Info("Successfully updated schedules: %s", strings.Join(updatedFiles, ", "))
 	logger.Debug("DotCal application completed successfully")
