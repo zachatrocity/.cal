@@ -11,9 +11,9 @@
 
 | Time | Monday | Tuesday | Wednesday | Thursday | Friday |
 |:----:|:------:|:--------:|:---------:|:--------:|:------:|
-{{range .TimeSlots}}
+{{- range .TimeSlots}}
 | {{.Time}} |{{range .DaySlots}} {{formatStatus .}} |{{end}}
-{{end}}
+{{- end}}
 
 ---
 ### 📝 Legend
