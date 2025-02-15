@@ -55,10 +55,20 @@ jobs:
 
       - name: Extract changelog
         id: extract_changelog
-        uses: ffurrer2/extract-changelog-action@v1
-        with:
-          changelog_file: CHANGELOG.md
-          version: ${{ steps.get_version.outputs.VERSION }}
+        run: |
+          VERSION=${{ steps.get_version.outputs.VERSION }}
+          # Extract changelog section for the version
+          CHANGELOG_SECTION=$(awk -v ver="$VERSION" '
+            BEGIN { in_section=0; content="" }
+            /^## \['"$VERSION"'\]/ { in_section=1; next }
+            /^## \[.*\]/ { if(in_section) { exit } }
+            in_section { content = content $0 "\n" }
+            END { printf "%s", content }
+          ' CHANGELOG.md)
+          # Save to output
+          echo "changelog<<EOF" >> $GITHUB_OUTPUT
+          echo "$CHANGELOG_SECTION" >> $GITHUB_OUTPUT
+          echo "EOF" >> $GITHUB_OUTPUT
 
       - name: Create Release
         uses: softprops/action-gh-release@v1
