@@ -114,7 +114,7 @@ func (g *Generator) GenerateWeekSchedule(schedule *calendar.WeekSchedule) string
 
 func (g *Generator) formatSlot(slot calendar.TimeSlot) string {
 	var status, link string
-	title := "Book"
+	title := "Available"
 	// logger.Debug("og: ", slot)
 
 	switch slot.Status {
