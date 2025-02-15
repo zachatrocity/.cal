@@ -6,6 +6,9 @@ on:
   pull_request:
     branches: [ main ]
 
+permissions:
+  contents: write
+
 jobs:
   test:
     name: Run Tests and Coverage
@@ -13,8 +16,6 @@ jobs:
     
     steps:
     - uses: actions/checkout@v3
-      with:
-        fetch-depth: 0
 
     - name: Set up Go
       uses: actions/setup-go@v4
@@ -31,9 +32,22 @@ jobs:
         cd dotcal
         go test ./... -coverprofile=coverage.out -v
 
-    - name: Upload coverage to Codecov
-      uses: codecov/codecov-action@v3
+    - name: Generate coverage badge
+      uses: tj-actions/coverage-badge-go@v2
       with:
-        file: ./dotcal/coverage.out
-        flags: unittests
-        fail_ci_if_error: true
+        filename: dotcal/coverage.out
+
+    - name: Verify Changed files
+      uses: tj-actions/verify-changed-files@v16
+      id: verify-changed-files
+      with:
+        files: README.md
+
+    - name: Commit changes
+      if: steps.verify-changed-files.outputs.files_changed == 'true'
+      run: |
+        git config --local user.email "action@github.com"
+        git config --local user.name "GitHub Action"
+        git add README.md
+        git commit -m "chore: Updated coverage badge."
+        git push

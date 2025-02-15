@@ -1,6 +1,6 @@
 # .cal - Self Hosted Scheduler
 [![License: GPL v3](https://img.shields.io/badge/License-GPLv3-blue.svg)](https://www.gnu.org/licenses/gpl-3.0)
-[![codecov](https://codecov.io/gh/zachatrocity/dotcal/branch/main/graph/badge.svg)](https://codecov.io/gh/zachatrocity/dotcal)
+![Coverage](./coverage.svg)
 
 This is in progress, I'll publish to a docker image when alpha is ready, you can see example output here:
 
