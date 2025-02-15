@@ -13,8 +13,8 @@ https://github.com/zachatrocity/cal/
 - [ ] Create month overview template
 - [ ] Publish anon .ics
 - [ ] Add booking guidlines
-- [ ] Convert markdown.go to use a templating engine
-- [ ] Publish docker image
+- [x] Convert markdown.go to use a templating engine
+- [x] Publish docker image
 
 ## Goals
 
@@ -55,3 +55,11 @@ go mod download
 go build ./cmd/server
 ./server
 ```
+
+## Versioning
+
+This project follows [Semantic Versioning](https://semver.org/). For available versions, see the [releases on GitHub](https://github.com/zachatrocity/dotcal/releases).
+
+## Changelog
+
+See [CHANGELOG.md](CHANGELOG.md) for a list of changes and versions.
