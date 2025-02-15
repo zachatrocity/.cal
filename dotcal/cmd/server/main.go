@@ -170,15 +170,15 @@ func main() {
 	}
 
 	// Skip push when running under test
-	// if !testing.Testing() && {
-	// 	logger.Debug("Pushing changes to remote")
-	// 	if err := repo.Push(); err != nil {
-	// 		logger.Error("Failed to push changes: %v", err)
-	// 		os.Exit(1)
-	// 	}
-	// } else {
-	// 	logger.Debug("Skipping push in test mode")
-	// }
+	if !testing.Testing() && {
+		logger.Debug("Pushing changes to remote")
+		if err := repo.Push(); err != nil {
+			logger.Error("Failed to push changes: %v", err)
+			os.Exit(1)
+		}
+	} else {
+		logger.Debug("Skipping push in test mode")
+	}
 
 	logger.Info("Successfully updated schedules: %s", strings.Join(updatedFiles, ", "))
 	logger.Debug("DotCal application completed successfully")
