@@ -38,6 +38,13 @@ func (p *Parser) Parse(data []byte) ([]Event, error) {
 			currentEvent = &Event{}
 		case line == "END:VEVENT":
 			if currentEvent != nil {
+				// Check SUMMARY for busy indication before adding event
+				// Because some ics feeds might be private and publish
+				// availability in summary field instead of title
+				if strings.Contains(strings.ToUpper(currentEvent.Title), "BUSY") {
+					currentEvent.Status = StatusBusy
+				}
+				// logger.Debug("Event: ", currentEvent)
 				events = append(events, *currentEvent)
 				currentEvent = nil
 			}
@@ -62,6 +69,7 @@ func (p *Parser) Parse(data []byte) ([]Event, error) {
 				currentEvent.Location = p.parseText(line)
 			}
 		case strings.HasPrefix(line, "STATUS"):
+			// Outlook feed all entries are STATUS:CONFIRMED
 			if currentEvent != nil {
 				currentEvent.Status = p.parseStatus(line)
 			}
@@ -104,11 +112,14 @@ func (p *Parser) parseText(line string) string {
 
 func (p *Parser) parseStatus(line string) Status {
 	status := strings.ToUpper(p.parseText(line))
+	// logger.Debug("status", status, line)
 	switch status {
 	case "TENTATIVE":
 		return StatusTentative
-	case "CONFIRMED", "BUSY":
+	case "BUSY":
 		return StatusBusy
+	case "CONFIRMED":
+		return StatusAvailable
 	default:
 		return StatusAvailable
 	}

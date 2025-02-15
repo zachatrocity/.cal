@@ -8,7 +8,6 @@ import (
 	"strings"
 	"time"
 
-	"github.com/zach/dotcal/internal/anonymizer"
 	"github.com/zach/dotcal/internal/calendar"
 	"github.com/zach/dotcal/internal/generator"
 	"github.com/zach/dotcal/internal/git"
@@ -48,8 +47,7 @@ func main() {
 	fetcher := calendar.NewFetcher()
 	parser := calendar.NewParser(tz)
 	merger := calendar.NewMerger(tz)
-	anon := anonymizer.NewAnonymizer()
-	gen := generator.NewGenerator(anon)
+	gen := generator.NewGenerator()
 	repo := git.NewRepository(config.RepoDirectory, config.GithubBranch)
 
 	// Clone repository if it doesn't exist

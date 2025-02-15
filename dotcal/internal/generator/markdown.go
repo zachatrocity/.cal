@@ -9,21 +9,11 @@ import (
 )
 
 // Generator handles markdown schedule generation
-type Generator struct {
-	anonymizer interface {
-		AnonymizeTitle(string) string
-		AnonymizeLocation(string) string
-	}
-}
+type Generator struct{}
 
 // NewGenerator creates a new markdown generator
-func NewGenerator(anonymizer interface {
-	AnonymizeTitle(string) string
-	AnonymizeLocation(string) string
-}) *Generator {
-	return &Generator{
-		anonymizer: anonymizer,
-	}
+func NewGenerator() *Generator {
+	return &Generator{}
 }
 
 // GenerateWeekSchedule creates a markdown schedule for a week
@@ -92,6 +82,7 @@ func (g *Generator) GenerateWeekSchedule(schedule *calendar.WeekSchedule) string
 		// Add slots for each day
 		for day := time.Monday; day <= time.Friday; day++ {
 			daySlot := schedule.Days[day][i]
+			// logger.Debug("day:", daySlot)
 			sb.WriteString(" ")
 			sb.WriteString(g.formatSlot(daySlot))
 			sb.WriteString(" |")
@@ -123,6 +114,8 @@ func (g *Generator) GenerateWeekSchedule(schedule *calendar.WeekSchedule) string
 
 func (g *Generator) formatSlot(slot calendar.TimeSlot) string {
 	var status, link string
+	title := "Book"
+	// logger.Debug("og: ", slot)
 
 	switch slot.Status {
 	case calendar.StatusAvailable:
@@ -130,19 +123,10 @@ func (g *Generator) formatSlot(slot calendar.TimeSlot) string {
 		link = "https://cal.com"
 	case calendar.StatusBusy:
 		status = "🔴"
-		if slot.Original != nil {
-			link = g.anonymizer.AnonymizeLocation(slot.Original.Location)
-		}
+		title = "Busy"
 	case calendar.StatusTentative:
 		status = "🟡"
-		if slot.Original != nil {
-			link = g.anonymizer.AnonymizeLocation(slot.Original.Location)
-		}
-	}
-
-	title := "Book"
-	if slot.Original != nil {
-		title = g.anonymizer.AnonymizeTitle(slot.Original.Title)
+		title = "Tentative"
 	}
 
 	if link != "" {

@@ -1,29 +1,45 @@
 package logger
 
 import (
-	"log"
 	"os"
+
+	"go.uber.org/zap"
+	"go.uber.org/zap/zapcore"
 )
 
-var debug = false
+var sugar *zap.SugaredLogger
 
 func init() {
-	debug = os.Getenv("DEV_MODE") == "true"
+	// Configure zap logger
+	config := zap.NewDevelopmentConfig()
+
+	// Set log level based on DEV_MODE
+	if os.Getenv("DEV_MODE") == "true" {
+		config.Level = zap.NewAtomicLevelAt(zap.DebugLevel)
+	} else {
+		config.Level = zap.NewAtomicLevelAt(zap.InfoLevel)
+	}
+
+	// Configure output format
+	config.EncoderConfig.EncodeLevel = zapcore.CapitalLevelEncoder
+	config.EncoderConfig.EncodeTime = zapcore.ISO8601TimeEncoder
+
+	// Create logger
+	logger, _ := config.Build()
+	sugar = logger.Sugar()
 }
 
-// Debug logs a debug message if DEV_MODE is enabled
+// Debug logs a debug message
 func Debug(format string, v ...interface{}) {
-	if debug {
-		log.Printf("[DEBUG] "+format, v...)
-	}
+	sugar.Debugf(format, v...)
 }
 
 // Error logs an error message
 func Error(format string, v ...interface{}) {
-	log.Printf("[ERROR] "+format, v...)
+	sugar.Errorf(format, v...)
 }
 
 // Info logs an info message
 func Info(format string, v ...interface{}) {
-	log.Printf("[INFO] "+format, v...)
+	sugar.Infof(format, v...)
 }
