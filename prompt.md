@@ -17,7 +17,6 @@ dotcal/
 │   ├── cmd/server/         # Main application entry point
 │   └── internal/           # Internal packages
 │       ├── dotcal/        # Calendar processing
-│       ├── anonymizer/    # Event anonymization
 │       ├── generator/     # Markdown generation
 │       └── git/          # Git operations
 ├── docker-compose.yml      # Service orchestration
@@ -33,18 +32,13 @@ dotcal/
    - Handles timezone conversions
    - 30-minute time slot granularity
 
-2. Event Anonymization (internal/anonymizer):
-   - All events shown as "Meeting"
-   - Preserves status (Available/Busy/Tentative)
-   - Generic meeting links
-
-3. Schedule Generation (internal/generator):
+2. Schedule Generation (internal/generator):
    - Markdown-based output
    - Weekly schedule view (Mon-Fri)
    - Time slots from 9 AM to 5 PM
    - Status indicators (🟢🔴🟡)
 
-4. Git Operations (internal/git):
+3. Git Operations (internal/git):
    - Repository cloning and updates
    - File management
    - Automated commits and pushes
@@ -75,9 +69,8 @@ Optional Environment Variables:
 ## Design Decisions
 
 1. Privacy First:
-   - All events anonymized as "Meeting"
+   - All events anonymized as "Busy"
    - No event details exposed
-   - Generic meeting links
 
 2. Static Output:
    - Markdown files for simplicity
