@@ -1,65 +1,69 @@
-# .cal - Self Hosted Scheduler
+# 📅 dotcal - An ultralight calendar aggregator and scheduler
+
 ![Coverage](https://img.shields.io/badge/Coverage-82.7%25-brightgreen)
 [![License: GPL v3](https://img.shields.io/badge/License-GPLv3-blue.svg)](https://www.gnu.org/licenses/gpl-3.0)
 
-This is in progress, I'll publish to a docker image when alpha is ready, you can see example output here:
+A Self-hosted `.ics` feed aggregator that publishes an anonymized public schedule to a GitHub repository. A light weight, ultra simplified, copyleft alternative to [cal.com](https://cal.com).
 
-https://github.com/zachatrocity/cal/
+You can see an exampled output at [zachatrocity/cal](https://github.com/zachatrocity/cal).
 
+<p align="center">
+  <img src="https://gist.githubusercontent.com/zachatrocity/e0246929ef65bb738bcf7a74c42b1bbf/raw/03eacfef248a275d915c314c295b673c6b1c4f7d/IMG_0291.jpeg" alt="dotcal screenshot"/>
+</p>
 
-## TODO
+## ✨ Features
 
-- [x] Create tests and coverage 
-- [ ] Create month overview template
-- [ ] Publish anon .ics
-- [ ] Add booking guidlines
-- [x] Convert markdown.go to use a templating engine
-- [x] Publish docker image
+- 🔄 Aggregates multiple ICS calendar feeds into pure markdown
+- 🔒 Anonymizes event details
+- 📝 Publishes formatted schedule to public repo
+- ⚡ Automatic syncing via cron
 
-## Goals
+## 🚀 Setup
 
-- aggregate multiple ICS calendar feeds (URLs)
-- remove event titles so we can make public
-- leverage github repo as public facing UI
-- sync w/ cronjob
+1. Create a GitHub repository for your public calendar
+2. Setup SSH key on host with repository access
+3. Create `docker-compose.yml` (see [docker-compose.yaml](/docker-compose.yml) for all options):
 
-## Setup
-this is designed to be self hosted and depends on a preconfigured ssh key for authenticiation.
-
-1. Create a new git repo to be used as your public facing calendar (i.e. `zachatrocity/cal`)
-
-2. Copy the `docker-compose.yml` and update the envs
-
-3. `docker-compose up -d`
-
-## Schedule Format
-
-The schedule is published to your GitHub repository with the following structure:
-
-- `README.md` - current week's schedule
-- `future/YYYY-WXX.md` - upcoming weekly schedules
-- `past/YYYY-WXX.md` - past weekly schedule archives
-
-The schedule shows:
-- 🟢 Available - Open slots
-- 🔴 Busy - Scheduled meetings (aggregated & anonymized)
-- 🟡 Tentative - Tentatively scheduled
-
-## Development
-
-To build and run locally:
-
-```bash
-cd backend
-go mod download
-go build ./cmd/server
-./server
+```yaml
+version: '3.8'
+services:
+  dotcal:
+    image: ghcr.io/zachatrocity/dotcal:latest
+    environment:
+      - GITHUB_REPO=git@github.com:username/calendar.git
+      - ICS_FEEDS=https://calendar.google.com/calendar/ical/example/basic.ics
+      - TIMEZONE=America/Boise
+    volumes:
+      - ~/.ssh:/root/.ssh:ro
+    restart: unless-stopped
 ```
 
-## Versioning
+4. Start the service:
+```bash
+docker-compose up -d
+```
 
-This project follows [Semantic Versioning](https://semver.org/). For available versions, see the [releases on GitHub](https://github.com/zachatrocity/dotcal/releases).
+## 📋 Schedule Format
 
-## Changelog
+Schedules are published to your GitHub repository:
+- `README.md` - Current week
+- `future/YYYY-WXX.md` - Upcoming weeks
+- `past/YYYY-WXX.md` - Past weeks
 
-See [CHANGELOG.md](CHANGELOG.md) for a list of changes and versions.
+Status indicators:
+- 🟢 Available
+- 🔴 Busy
+- 🟡 Tentative
+
+## Motivation
+I built this because managing multiple calendars across work, personal, family, startup, etc.. is way harder than it needs to be. I needed to enable public sharing of my availability without exposing sensitive calendar data, after playing with it for a bit a public github repo felt natural.
+
+## 🗺️ Roadmap
+- add custom template support
+- add a month view (if there's interest)
+- publish .ics to the public repo
+- implement some way to book time slots (need ideas; mailto?)
+
+## 📦 Versioning
+
+This project follows [Semantic Versioning](https://semver.org/). See [CHANGELOG.md](CHANGELOG.md) for version history.

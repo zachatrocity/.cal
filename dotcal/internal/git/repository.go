@@ -101,7 +101,7 @@ func (r *Repository) initializeRepoStructure() error {
 	}
 
 	// Create initial README.md
-	content := "# DotCal Schedule\n\nThis repository contains calendar schedules managed by DotCal."
+	content := "# dotcal Schedule\n\nThis repository contains calendar schedules managed by dotcal."
 	if err := r.WriteFile("README.md", content); err != nil {
 		return fmt.Errorf("failed to create README.md: %w", err)
 	}

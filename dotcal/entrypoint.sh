@@ -2,7 +2,7 @@
 
 # Configure Git
 git config --global user.email "dotcal@example.com"
-git config --global user.name "DotCal"
+git config --global user.name "dotcal"
 
 # Configure safe directory
 git config --global --add safe.directory /app/repo

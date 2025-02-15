@@ -1,8 +1,8 @@
-# DotCal Project Context
+# dotcal Project Context
 
 ## Core Concepts
 
-DotCal is a self-hosted calendar aggregation service that:
+dotcal is a self-hosted calendar aggregation service that:
 - Combines multiple ICS feeds into a unified schedule
 - Anonymizes all events (shown only as "Meeting" for privacy)
 - Publishes schedules to GitHub as markdown files

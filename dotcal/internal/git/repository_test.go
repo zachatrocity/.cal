@@ -184,7 +184,7 @@ func TestInitializeRepoStructure(t *testing.T) {
 	if err != nil {
 		t.Fatalf("Failed to read README.md: %v", err)
 	}
-	if !strings.Contains(string(content), "DotCal Schedule") {
+	if !strings.Contains(string(content), "dotcal Schedule") {
 		t.Error("README.md does not contain expected content")
 	}
 }

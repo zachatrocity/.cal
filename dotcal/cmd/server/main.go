@@ -26,7 +26,7 @@ type Config struct {
 }
 
 func main() {
-	logger.Debug("Starting DotCal application")
+	logger.Debug("Starting dotcal application")
 
 	// Load configuration
 	config, err := loadConfig()
@@ -177,7 +177,7 @@ func main() {
 	}
 
 	logger.Info("Successfully updated schedules: %s", strings.Join(updatedFiles, ", "))
-	logger.Debug("DotCal application completed successfully")
+	logger.Debug("dotcal application completed successfully")
 }
 
 func loadConfig() (*Config, error) {
