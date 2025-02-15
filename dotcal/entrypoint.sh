@@ -4,13 +4,16 @@
 git config --global user.email "dotcal@example.com"
 git config --global user.name "DotCal"
 
-# if [ "$DEV_MODE" != "true" ]; then
-#     # Create cron job from environment variable
-#     echo "$SYNC_SCHEDULE /usr/local/bin/dotcal" > /etc/crontabs/root
+# Configure safe directory
+git config --global --add safe.directory /app/repo
 
-#     # Start crond in the background
-#     crond -f -d 8 &
-# fi
+if [ "$DEV_MODE" != "true" ]; then
+    # Create cron job from environment variable
+    echo "$SYNC_SCHEDULE /usr/local/bin/dotcal" > /etc/crontabs/root
+
+    # Start crond in the background
+    crond -f -d 8 &
+fi
 
 # Run initial sync
 /usr/local/bin/dotcal

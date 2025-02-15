@@ -56,18 +56,13 @@ func main() {
 	}
 	repo := git.NewRepository(config.RepoDirectory, config.GithubBranch)
 
-	// Clone repository if it doesn't exist
-	if _, err := os.Stat(config.RepoDirectory); os.IsNotExist(err) {
+	// Ensure we have a valid git repository
+	if !repo.IsValidRepo() {
+		logger.Debug("No valid git repository found, attempting to clone")
 		if err := repo.Clone(config.GithubRepo); err != nil {
 			logger.Error("Failed to clone repository: %v", err)
 			os.Exit(1)
 		}
-	}
-
-	// Verify we have a valid git repository
-	if !repo.IsValidRepo() {
-		logger.Error("Not a valid git repository: %s", config.RepoDirectory)
-		os.Exit(1)
 	}
 	logger.Debug("Confirmed valid git repository at %s", config.RepoDirectory)
 
