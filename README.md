@@ -1,5 +1,5 @@
 # .cal - Self Hosted Scheduler
-![Coverage](https://img.shields.io/badge/Coverage-82.6%25-brightgreen)
+![Coverage](https://img.shields.io/badge/Coverage-82.7%25-brightgreen)
 [![License: GPL v3](https://img.shields.io/badge/License-GPLv3-blue.svg)](https://www.gnu.org/licenses/gpl-3.0)
 
 This is in progress, I'll publish to a docker image when alpha is ready, you can see example output here:
