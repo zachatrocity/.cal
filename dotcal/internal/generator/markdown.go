@@ -223,11 +223,19 @@ func (g *Generator) templateFuncs() template.FuncMap {
 
 // Helper methods from original implementation
 func (g *Generator) getFirstDayOfWeek(year, week int) time.Time {
+	// Find the first day of the year
 	jan1 := time.Date(year, time.January, 1, 0, 0, 0, 0, time.UTC)
-	firstMonday := jan1
-	for firstMonday.Weekday() != time.Monday {
-		firstMonday = firstMonday.AddDate(0, 0, 1)
+
+	// Get the offset to the first Monday of the year
+	offset := int(time.Monday - jan1.Weekday())
+	if offset > 0 {
+		offset -= 7
 	}
+
+	// Get the first Monday of the year
+	firstMonday := jan1.AddDate(0, 0, offset)
+
+	// Add weeks to get to the target week
 	return firstMonday.AddDate(0, 0, (week-1)*7)
 }
 
