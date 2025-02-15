@@ -12,7 +12,7 @@ if [ "$DEV_MODE" != "true" ]; then
     echo "$SYNC_SCHEDULE /usr/local/bin/dotcal >> /proc/1/fd/1 2>&1" > /etc/crontabs/root
 
     # Start crond in the background
-    crond -f -d 1 &
+    crond -f -d 0 &
 fi
 
 # Run initial sync

@@ -63,6 +63,7 @@ I built this because managing multiple calendars across work, personal, family, 
 - add a month view (if there's interest)
 - publish .ics to the public repo
 - implement some way to book time slots (need ideas; mailto?)
+- static site output option (htmx)
 
 ## 📦 Versioning
 
