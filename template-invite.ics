@@ -1,0 +1,20 @@
+BEGIN:VCALENDAR
+VERSION:2.0
+PRODID:-//dotcal//Schedule Meeting//EN
+CALSCALE:GREGORIAN
+METHOD:REQUEST
+BEGIN:VEVENT
+UID:slot-2024w08-mon-0900@dotcal
+DTSTAMP:20240219T090000Z
+DTSTART:20240219T090000Z
+DTEND:20240219T093000Z
+SUMMARY:Meeting with [Your Name]
+DESCRIPTION:This is a proposed meeting time. To confirm this slot\, please respond to this calendar invitation.\n\nRequested via dotcal scheduling system.
+ORGANIZER;CN=[Your Name]:mailto:you@example.com
+ATTENDEE;ROLE=REQ-PARTICIPANT;PARTSTAT=NEEDS-ACTION;RSVP=TRUE:mailto:you@example.com
+STATUS:TENTATIVE
+TRANSP:OPAQUE
+SEQUENCE:0
+CLASS:PUBLIC
+END:VEVENT
+END:VCALENDAR

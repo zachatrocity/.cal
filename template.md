@@ -39,4 +39,7 @@
 - [View Month Overview](./2023-10.md)
 - [Booking Guidelines](./booking-guidelines.md)
 
+### Schedule Options
+- 🟢 [Book](/template-invite.ics)
+
 ### 🔄 Last Updated: 2023-10-15 18:00 EST
