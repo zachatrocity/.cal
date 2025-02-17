@@ -11,6 +11,8 @@ You can see an exampled output at [zachatrocity/cal](https://github.com/zachatro
   <img src="https://gist.githubusercontent.com/zachatrocity/e0246929ef65bb738bcf7a74c42b1bbf/raw/03eacfef248a275d915c314c295b673c6b1c4f7d/IMG_0291.jpeg" alt="dotcal screenshot"/>
 </p>
 
+> ⚠️ **Development Status** ⚠️: This project is in active development. While dotcal never modifies your calendar data (it only reads from ICS feeds), it's recommended to maintain backups of any important GitHub repositories you publish to, as this project's behavior may change during development.
+
 ## ✨ Features
 
 - 🔄 Aggregates multiple ICS calendar feeds into pure markdown
