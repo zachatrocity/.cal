@@ -37,6 +37,11 @@ func (r *Repository) IsValidRepo() bool {
 func (r *Repository) Clone(url string) error {
 	logger.Debug("Attempting to clone repository from %s to %s", url, r.path)
 
+	if _, err := os.Stat(r.path); !os.IsNotExist(err) {
+		logger.Debug("Destination path already exists: %s", r.path)
+		return fmt.Errorf("destination path already exists: %s", r.path)
+	}
+
 	// First clone without specifying branch
 	cmd := exec.Command("git", "clone", url, r.path)
 	logger.Debug("Running command: git clone %s %s", url, r.path)
