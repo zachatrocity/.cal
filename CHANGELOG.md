@@ -10,6 +10,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 - Capture cron output and reduce verbosity
+- Change cronjob path
 
 ## [0.0.5]
 
