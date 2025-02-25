@@ -34,13 +34,37 @@ func (m *Merger) MergeEvents(events []Event, year int, week int) *WeekSchedule {
 		schedule.Days[day] = m.createDaySlots()
 	}
 
-	// Sort events by start time
-	sort.Slice(events, func(i, j int) bool {
-		return events[i].Start.Before(events[j].Start)
+	// Calculate the start and end dates of the specified week
+	weekStart := FirstDayOfISOWeek(year, week, m.timezone)
+	weekEnd := weekStart.AddDate(0, 0, 7) // End of week (exclusive)
+
+	logger.Debug("filtering events for week %d-%d (%s to %s)",
+		year, week, weekStart.Format("2006-01-02"), weekEnd.Format("2006-01-02"))
+
+	// Filter events to only include those within the specified week
+	weekEvents := make([]Event, 0)
+	for _, event := range events {
+		// Skip weekend events
+		if event.Start.Weekday() == time.Saturday || event.Start.Weekday() == time.Sunday {
+			continue
+		}
+
+		// Check if event falls within the week
+		if event.Start.Before(weekEnd) && event.End.After(weekStart) {
+			weekEvents = append(weekEvents, event)
+		}
+	}
+
+	logger.Debug("filtered %d events down to %d events for week %d",
+		len(events), len(weekEvents), week)
+
+	// Sort filtered events by start time
+	sort.Slice(weekEvents, func(i, j int) bool {
+		return weekEvents[i].Start.Before(weekEvents[j].Start)
 	})
 
 	// Merge events into slots
-	for _, event := range events {
+	for _, event := range weekEvents {
 		m.mergeEventIntoSchedule(schedule, event)
 	}
 
@@ -66,6 +90,22 @@ func (m *Merger) createDaySlots() []TimeSlot {
 	return slots
 }
 
+// FirstDayOfISOWeek returns the date of the first day (Monday) of the given ISO week
+func FirstDayOfISOWeek(year int, week int, loc *time.Location) time.Time {
+	// Start with January 4th which is always in week 1 of the ISO week year
+	jan4 := time.Date(year, 1, 4, 0, 0, 0, 0, loc)
+
+	// Get the Monday of week 1
+	_, w := jan4.ISOWeek()
+	mon1 := jan4.AddDate(0, 0, -int(jan4.Weekday())+int(time.Monday))
+	if w > 1 {
+		mon1 = mon1.AddDate(0, 0, -7)
+	}
+
+	// Add weeks to get to our target week
+	return mon1.AddDate(0, 0, (week-1)*7)
+}
+
 // mergeEventIntoSchedule merges a single event into the schedule
 func (m *Merger) mergeEventIntoSchedule(schedule *WeekSchedule, event Event) {
 	logger.Debug("processing event: ", event, " with status: ", event.Status)
@@ -73,6 +113,18 @@ func (m *Merger) mergeEventIntoSchedule(schedule *WeekSchedule, event Event) {
 	// Skip events outside business hours or on weekends
 	if event.Start.Weekday() == time.Saturday || event.Start.Weekday() == time.Sunday {
 		logger.Debug("skipping weekend event")
+		return
+	}
+
+	// Calculate the start and end dates of the specified week
+	// ISO week starts on Monday and ends on Sunday
+	year, week := schedule.Year, schedule.Week
+	weekStart := FirstDayOfISOWeek(year, week, m.timezone)
+	weekEnd := weekStart.AddDate(0, 0, 7) // End of week (exclusive)
+
+	// Skip events outside the specified week
+	if event.Start.Before(weekStart) || event.Start.After(weekEnd) || event.Start.Equal(weekEnd) {
+		logger.Debug("skipping event outside specified week")
 		return
 	}
 

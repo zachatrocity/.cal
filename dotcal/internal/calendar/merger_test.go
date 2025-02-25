@@ -23,12 +23,20 @@ func TestNewMerger(t *testing.T) {
 }
 
 func TestMergeEvents(t *testing.T) {
-	// Use a fixed date for consistent testing
-	baseDate := time.Date(2025, 2, 17, 0, 0, 0, 0, time.UTC) // A Monday
+	// Get the first day (Monday) of week 9, 2025
+	baseDate := FirstDayOfISOWeek(2025, 9, time.UTC)
+
+	// Verify we have the correct week
+	year, week := baseDate.ISOWeek()
+	if year != 2025 || week != 9 {
+		t.Fatalf("Test setup error: baseDate %v is not in week 9 of 2025, got year %d, week %d",
+			baseDate, year, week)
+	}
+
 	merger := NewMerger(time.UTC)
 
 	t.Run("empty events list", func(t *testing.T) {
-		schedule := merger.MergeEvents(nil, 2025, 8)
+		schedule := merger.MergeEvents(nil, 2025, 9)
 		if len(schedule.Days) != 5 {
 			t.Errorf("Expected 5 days, got %d", len(schedule.Days))
 		}
@@ -55,7 +63,7 @@ func TestMergeEvents(t *testing.T) {
 				Status: StatusBusy,
 			},
 		}
-		schedule := merger.MergeEvents(events, 2025, 8)
+		schedule := merger.MergeEvents(events, 2025, 9)
 
 		// Check affected slots
 		mondaySlots := schedule.Days[time.Monday]
@@ -73,7 +81,7 @@ func TestMergeEvents(t *testing.T) {
 			End:    baseDate.Add(145 * time.Hour),
 			Status: StatusBusy,
 		}
-		schedule := merger.MergeEvents([]Event{saturdayEvent}, 2025, 8)
+		schedule := merger.MergeEvents([]Event{saturdayEvent}, 2025, 9)
 
 		// Verify all slots remain available
 		for day := time.Monday; day <= time.Friday; day++ {
@@ -98,7 +106,7 @@ func TestMergeEvents(t *testing.T) {
 				Status: StatusBusy,
 			},
 		}
-		schedule := merger.MergeEvents(events, 2025, 8)
+		schedule := merger.MergeEvents(events, 2025, 9)
 
 		// Check the 10:00-10:30 slot (index 2)
 		slot := schedule.Days[time.Monday][2]
@@ -115,7 +123,7 @@ func TestMergeEvents(t *testing.T) {
 				Status: StatusBusy,
 			},
 		}
-		schedule := merger.MergeEvents(events, 2025, 8)
+		schedule := merger.MergeEvents(events, 2025, 9)
 
 		// Check all affected slots (10:00-12:00, 4 slots)
 		mondaySlots := schedule.Days[time.Monday]
@@ -144,7 +152,7 @@ func TestMergeEvents(t *testing.T) {
 				Status: StatusBusy,
 			},
 		}
-		schedule := merger.MergeEvents(events, 2025, 8)
+		schedule := merger.MergeEvents(events, 2025, 9)
 
 		// Check affected slots (10:00-11:00, 2 slots)
 		mondaySlots := schedule.Days[time.Monday]

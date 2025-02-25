@@ -105,8 +105,10 @@ func main() {
 
 	// Generate schedules for each week in the range
 	logger.Debug("Processing weeks in range")
-	for d := startDate; d.Before(endDate); d = d.AddDate(0, 0, 7) {
+	for d := startDate; d.Before(endDate); {
 		year, week := d.ISOWeek()
+
+		// Generate schedule for this week
 		schedule := merger.MergeEvents(allEvents, year, week)
 		content, err := gen.GenerateWeekSchedule(schedule)
 		if err != nil {
@@ -126,6 +128,13 @@ func main() {
 			os.Exit(1)
 		}
 		updatedFiles = append(updatedFiles, filePath)
+
+		// Move to next week, being careful not to skip partial weeks
+		nextDay := d.AddDate(0, 0, 1)
+		for nextDay.Weekday() != time.Monday && nextDay.Before(endDate) {
+			nextDay = nextDay.AddDate(0, 0, 1)
+		}
+		d = nextDay
 	}
 
 	// Update README.md with current week's schedule
@@ -138,17 +147,32 @@ func main() {
 		currentWeekPath = fmt.Sprintf("future/%d-W%02d.md", nextYear, nextWeekNum)
 	} else {
 		// Use current week's schedule
-		currentWeekPath = fmt.Sprintf("future/%d-W%02d.md", currentYear, currentWeek)
-		if now.Before(endDate) && now.After(startDate) {
+		weekStart := calendar.FirstDayOfISOWeek(currentYear, currentWeek, tz)
+		if weekStart.Before(now) {
 			currentWeekPath = fmt.Sprintf("past/%d-W%02d.md", currentYear, currentWeek)
+		} else {
+			currentWeekPath = fmt.Sprintf("future/%d-W%02d.md", currentYear, currentWeek)
 		}
 	}
 
-	// Read and copy the current week's content to README.md
+	// Try both past and future directories if file not found
 	currentWeekContent, err := os.ReadFile(filepath.Join(config.RepoDirectory, currentWeekPath))
 	if err != nil {
-		logger.Error("Failed to read current week file: %v", err)
-		os.Exit(1)
+		// If file not found, try the opposite directory
+		altPath := currentWeekPath
+		if strings.Contains(currentWeekPath, "past/") {
+			altPath = strings.Replace(currentWeekPath, "past/", "future/", 1)
+		} else {
+			altPath = strings.Replace(currentWeekPath, "future/", "past/", 1)
+		}
+
+		currentWeekContent, err = os.ReadFile(filepath.Join(config.RepoDirectory, altPath))
+		if err != nil {
+			logger.Error("Failed to read current week file from both past and future directories: %v", err)
+			os.Exit(1)
+		}
+		// Update the path to where we found the file
+		currentWeekPath = altPath
 	}
 
 	if err := repo.WriteFile("README.md", string(currentWeekContent)); err != nil {

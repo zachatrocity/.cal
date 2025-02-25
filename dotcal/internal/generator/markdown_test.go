@@ -239,8 +239,7 @@ func TestTemplateFuncs(t *testing.T) {
 	}
 }
 
-func TestGetFirstDayOfWeek(t *testing.T) {
-	g := &Generator{}
+func TestFirstDayOfISOWeek(t *testing.T) {
 	tests := []struct {
 		year     int
 		week     int
@@ -256,12 +255,17 @@ func TestGetFirstDayOfWeek(t *testing.T) {
 			week:     7,
 			wantDate: time.Date(2025, 2, 10, 0, 0, 0, 0, time.UTC),
 		},
+		{
+			year:     2025,
+			week:     9,
+			wantDate: time.Date(2025, 2, 24, 0, 0, 0, 0, time.UTC),
+		},
 	}
 
 	for _, tt := range tests {
-		got := g.getFirstDayOfWeek(tt.year, tt.week)
+		got := calendar.FirstDayOfISOWeek(tt.year, tt.week, time.UTC)
 		if !got.Equal(tt.wantDate) {
-			t.Errorf("getFirstDayOfWeek(%d, %d) = %v, want %v",
+			t.Errorf("FirstDayOfISOWeek(%d, %d, UTC) = %v, want %v",
 				tt.year, tt.week, got, tt.wantDate)
 		}
 	}

@@ -29,6 +29,9 @@ services:
 
       # Directory inside container where git repo will be cloned
       - REPO_DIRECTORY=/app/repo
+      
+      # Logging
+      - DEV_MODE=${DEV_MODE:-false}
     volumes:
       # Mount the git repository directory
       - ./data/repo:/app/repo

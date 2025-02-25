@@ -99,7 +99,7 @@ func (g *Generator) loadTemplates() error {
 
 // GenerateWeekSchedule creates a markdown schedule for a week
 func (g *Generator) GenerateWeekSchedule(schedule *calendar.WeekSchedule) (string, error) {
-	startDate := g.getFirstDayOfWeek(schedule.Year, schedule.Week)
+	startDate := calendar.FirstDayOfISOWeek(schedule.Year, schedule.Week, schedule.TimeZone)
 	endDate := startDate.AddDate(0, 0, 4) // Friday
 
 	data := WeekTemplateData{
@@ -174,8 +174,9 @@ func (g *Generator) buildDaySlot(slot calendar.TimeSlot) DaySlotData {
 
 // buildNavigation creates navigation links for templates
 func (g *Generator) buildNavigation(year, week int) NavigationData {
-	prevWeek := g.getFirstDayOfWeek(year, week).AddDate(0, 0, -7)
-	nextWeek := g.getFirstDayOfWeek(year, week).AddDate(0, 0, 7)
+	// Use UTC for navigation since it's just for link generation
+	prevWeek := calendar.FirstDayOfISOWeek(year, week, time.UTC).AddDate(0, 0, -7)
+	nextWeek := calendar.FirstDayOfISOWeek(year, week, time.UTC).AddDate(0, 0, 7)
 	now := time.Now()
 
 	prevYear, prevWeekNum := prevWeek.ISOWeek()
@@ -219,24 +220,6 @@ func (g *Generator) templateFuncs() template.FuncMap {
 		},
 		"timezoneOffset": g.formatTimezoneOffset,
 	}
-}
-
-// Helper methods from original implementation
-func (g *Generator) getFirstDayOfWeek(year, week int) time.Time {
-	// Find the first day of the year
-	jan1 := time.Date(year, time.January, 1, 0, 0, 0, 0, time.UTC)
-
-	// Get the offset to the first Monday of the year
-	offset := int(time.Monday - jan1.Weekday())
-	if offset > 0 {
-		offset -= 7
-	}
-
-	// Get the first Monday of the year
-	firstMonday := jan1.AddDate(0, 0, offset)
-
-	// Add weeks to get to the target week
-	return firstMonday.AddDate(0, 0, (week-1)*7)
 }
 
 func (g *Generator) formatTimezoneOffset(tz *time.Location) string {
