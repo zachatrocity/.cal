@@ -1,6 +1,6 @@
 # 📅 dotcal - An ultralight calendar aggregator and scheduler
 
-![Coverage](https://img.shields.io/badge/Coverage-83.1%25-brightgreen)
+![Coverage](https://img.shields.io/badge/Coverage-81.0%25-brightgreen)
 [![License: GPL v3](https://img.shields.io/badge/License-GPLv3-blue.svg)](https://www.gnu.org/licenses/gpl-3.0)
 
 A Self-hosted `.ics` feed aggregator that publishes an anonymized public schedule to a GitHub repository. A light weight, ultra simplified, copyleft alternative to [cal.com](https://cal.com).
